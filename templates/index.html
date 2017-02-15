@@ -1,0 +1,19 @@
+<!doctype html>
+<head>
+  <title>Top #insert_hashtag tweets</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+  <div class="content">
+    <h1>Top 10 #insert_hashtag tweets</h1>
+    {% for item in toplist:%}
+      <div class="tweet">
+        <h3>Score: {{ item[0] }}</h3>
+        <p style="font-size:1.5em">{{ item[1]["text"]|safe }}</p>
+        <p style="font-size:0.8em"><a href={{ item[1]["url"] }} target="_blank">{{ item[1]["url"] }}</a></p>
+      </div>
+    {% endfor %}
+    <hr>
+    <p style="color: gray">Score = retweets + likes</p>
+  </div>
+</body>
