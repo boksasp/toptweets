@@ -1,2 +1,2 @@
 /toptweets.conf
-/update_top_ten.pyc
+*.pyc
