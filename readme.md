@@ -16,7 +16,7 @@ The project uses the following pip packages:
 
 ### Authentication
 
-This project uses Application-Only Authentication with the Twitter REST API.
+This project uses Application-Only authentication with the Twitter REST API.
 ### Setup
 
 * Create a new app at [Twitter Apps](https://apps.twitter.com/)
