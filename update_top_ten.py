@@ -1,13 +1,13 @@
 from pymongo import MongoClient
 
 def get_toplist():
-    db = DbClient()
+    db = MongoClient().toptweetsDB
 
     top_dict = {}
     top_list = []
 
     # Generate the top 10 tweets based on favorite_count + retweet_count
-    for tweet in db.get_tweets():
+    for tweet in db.tweets.find():
         score = tweet['favorite_count'] + tweet['retweet_count']
         min_score = 9999
         key = ""
@@ -34,24 +34,3 @@ def get_toplist():
 
     top_list.sort(reverse=True)
     return top_list
-
-
-class TopList(object):
-    
-    def generate_toplist(self, tweets):
-        pass
-
-    def is_topten(self, tweet):
-        pass
-    
-    def insert(self, tweet):
-        pass
-
-class DbClient(object):
-    
-    def __init__(self):
-        self.client = MongoClient()
-        self.db = self.client.toptweetsDB
-
-    def get_tweets(self):
-        return self.db.tweets.find()
