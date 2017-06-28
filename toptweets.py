@@ -11,8 +11,8 @@ def setup():
         access_token_secret=config['access_token_secret'])
 
     client = MongoClient()
-    db = client.toptweetsDB
-    return config, api, db
+    
+    return config, api, client.toptweetsDB
 
 config, api, db = setup()
 
@@ -25,9 +25,9 @@ query = "l={}&q=%23{}%20since%3A{}%20until%3A{}&count={}".format(
         
 statuses = api.GetSearch(raw_query=query)
 print "Found {:d} tweets".format(len(statuses))
-tweets = db.tweets
 
 inserts = 0
+replaces = 0
 for status in statuses:
     url = "https://twitter.com/i/web/status/{}".format(status.id_str)
 
@@ -40,10 +40,16 @@ for status in statuses:
             "id" : status.id_str,
             "url" : url}
 
-    if (tweets.find({"id" : status.id_str}).count() > 0) or (status.text.__getslice__(0,4) == "RT @"):
+    result = db.tweets.find_one({"id" : tweet["id"]})
+    
+    if (status.text.__getslice__(0,4) == "RT @"):
         pass
+    elif (result):
+        db.tweets.replace_one({"id" : result["id"]}, tweet)
+        replaces += 1
     else:
-        tweets.insert_one(tweet)
+        db.tweets.insert_one(tweet)
         inserts += 1
 
-print "Inserted {:d} unique tweets".format(inserts)
+print "Replaced {:d} tweets".format(replaces)
+print "Inserted {:d} new tweets".format(inserts)
