@@ -1,6 +1,7 @@
 import twitter
 from pymongo import MongoClient
 from configobj import ConfigObj
+from os import sys
 
 def setup():
 
@@ -14,32 +15,10 @@ def setup():
     
     return config, api, client.toptweetsDB
 
-config, api, db = setup()
-
-query = "l={}&q=%23{}%20since%3A{}%20until%3A{}&count={}".format(
-        config['language'],
-        config['hashtag'],
-        config['since'],
-        config['until'],
-        config['count'])
-        
-statuses = api.GetSearch(raw_query=query)
-print "Found {:d} tweets".format(len(statuses))
-
-inserts = 0
-replaces = 0
-for status in statuses:
-    url = "https://twitter.com/i/web/status/{}".format(status.id_str)
-
-    tweet = {"created_at": status.created_at,
-            "favorite_count": status.favorite_count,
-            "full_text": status.full_text,
-            "lang": status.lang,
-            "retweet_count": status.retweet_count,
-            "text": status.text,
-            "id" : status.id_str,
-            "url" : url}
-
+def save_tweet(tweet):
+    replaces = 0
+    inserts = 0
+    
     result = db.tweets.find_one({"id" : tweet["id"]})
     
     if (status.text.__getslice__(0,4) == "RT @"):
@@ -50,6 +29,37 @@ for status in statuses:
     else:
         db.tweets.insert_one(tweet)
         inserts += 1
+    
+    return replaces, inserts
 
-print "Replaced {:d} tweets".format(replaces)
-print "Inserted {:d} new tweets".format(inserts)
+config, api, db = setup()
+
+query = "l={}&q=%23{}%20since%3A{}%20until%3A{}&count={}".format(
+        config['language'],
+        config['hashtag'],
+        config['since'],
+        config['until'],
+        config['count'])
+        
+statuses = api.GetSearch(raw_query=query)
+
+if (len(statuses) == 0):
+    print "No results found"
+    sys.exit()
+else:
+    print "Found {:d} tweets".format(len(statuses))
+
+for status in statuses:
+    tweet = {"created_at": status.created_at,
+            "favorite_count": status.favorite_count,
+            "full_text": status.full_text,
+            "lang": status.lang,
+            "retweet_count": status.retweet_count,
+            "text": status.text,
+            "id" : status.id_str,
+            "url" : "https://twitter.com/i/web/status/{}".format(status.id_str)}
+
+    replaces, inserts = save_tweet(tweet)
+
+print "Replaced {:d} old tweet(s)".format(replaces)
+print "Inserted {:d} new tweet(s)".format(inserts)
