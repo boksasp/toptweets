@@ -1,53 +1,58 @@
+from os import sys
 import twitter
 from pymongo import MongoClient
 from configobj import ConfigObj
-from os import sys
 
 def setup():
 
     config = ConfigObj("./toptweets.conf")
     api = twitter.Api(consumer_key=config['consumer_key'],
-        consumer_secret=config['consumer_secret'],
-        access_token_key=config['access_token_key'],
-        access_token_secret=config['access_token_secret'])
+                      consumer_secret=config['consumer_secret'],
+                      access_token_key=config['access_token_key'],
+                      access_token_secret=config['access_token_secret'])
 
     client = MongoClient()
-    
+
     return config, api, client.toptweetsDB
 
 def save_tweet(tweet):
-    replaces = 0
-    inserts = 0
-    
+    replaced = False
+    inserted = False
+
     result = db.tweets.find_one({"id" : tweet["id"]})
-    
-    if (status.text.__getslice__(0,4) == "RT @"):
+
+    if status.text[0:4] == "RT @":
         pass
-    elif (result):
+    elif result:
         db.tweets.replace_one({"id" : result["id"]}, tweet)
-        replaces += 1
+        replaced = True
     else:
         db.tweets.insert_one(tweet)
-        inserts += 1
-    
-    return replaces, inserts
+        inserted = True
+
+    return replaced, inserted
 
 config, api, db = setup()
 
 query = "l={}&q=%23{}%20since%3A{}%20until%3A{}&count={}".format(
-        config['language'],
-        config['hashtag'],
-        config['since'],
-        config['until'],
-        config['count'])
-        
+    config['language'],
+    config['hashtag'],
+    config['since'],
+    config['until'],
+    config['count'])
+
 statuses = api.GetSearch(raw_query=query)
 
-if (len(statuses) == 0):
-    print "No results found"
+if not statuses:
+    print("No results found")
     sys.exit()
 else:
-    print "Found {:d} tweets".format(len(statuses))
+    print("Found {:d} tweets".format(len(statuses)))
+
+total_inserts = 0
+total_replaces = 0
+
+printed_one = False
 
 for status in statuses:
     tweet = {"created_at": status.created_at,
@@ -57,9 +62,13 @@ for status in statuses:
             "retweet_count": status.retweet_count,
             "text": status.text,
             "id" : status.id_str,
-            "url" : "https://twitter.com/i/web/status/{}".format(status.id_str)}
+            "url" : "https://twitter.com/i/web/status/{}".format(status.id_str),
+            "hashtag": config['hashtag']}
 
-    replaces, inserts = save_tweet(tweet)
+    replaced, inserted = save_tweet(tweet)
+    total_replaces += 1 if replaced else 0
+    total_inserts += 1 if inserted else 0
 
-print "Replaced {:d} old tweet(s)".format(replaces)
-print "Inserted {:d} new tweet(s)".format(inserts)
+
+print("Replaced {:d} old tweet(s)".format(total_replaces))
+print("Inserted {:d} new tweet(s)".format(total_inserts))

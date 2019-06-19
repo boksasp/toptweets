@@ -1,13 +1,13 @@
 from pymongo import MongoClient
 
-def get_toplist():
+def get_toplist(hashtag):
     db = MongoClient().toptweetsDB
 
     top_dict = {}
     top_list = []
 
     # Generate the top 10 tweets based on favorite_count + retweet_count
-    for tweet in db.tweets.find():
+    for tweet in db.tweets.find({ 'hashtag': hashtag }):
         score = tweet['favorite_count'] + tweet['retweet_count']
         min_score = 9999
         key = ""
@@ -22,9 +22,9 @@ def get_toplist():
                     key = k
 
         if score > min_score:
-            print "popping {} from top list".format(key)
+            print("popping {} from top list".format(key))
             top_dict.pop(key)
-            print "adding {} to top list".format(tweet['id'])
+            print("adding {} to top list".format(tweet['id']))
             top_dict[tweet['id']] = score
 
     # Insert the score and tweet in a dictionary to sort the list based on score

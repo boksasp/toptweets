@@ -1,5 +1,7 @@
 ## Web site for top 10 tweets
 
+(Note: The app required Python 2.7)
+
 A python web site for displaying the top 10 tweets containing a hashtag of your choosing.  
 The score for each tweet is retweets + likes.  
 Tweets are stored in MongoDB.  
